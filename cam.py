@@ -26,7 +26,8 @@ class SetInterval:
         self.stopEvent.set()
 
 def capture_image():
-    cap = cv2.VideoCapture(0, cv2.CAP_V4L)
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     ret, frame = cap.read()
     cap.release()
     return frame
@@ -61,7 +62,7 @@ def get_pixhawk_data(master):
 def interval_capture(num, interval, path, color=False, pixhawk_url=None):
     master = None
     if pixhawk_url:
-        master = mavutil.mavlink_connection(pixhawk_url)
+        master = mavutil.mavlink_connection(pixhawk_url, baud = 57600)
 
     intr = None
     ctr = 0
@@ -74,6 +75,8 @@ def interval_capture(num, interval, path, color=False, pixhawk_url=None):
         
         gps_data, imu_data = get_pixhawk_data(master) if master else (None, None)
         save_image(fpath, color, gps_data, imu_data)
+        print(gps_data)
+        print(imu_data)
         
         if ctr >= num:
             intr.cancel()
@@ -84,7 +87,7 @@ def main(args):
     if args.interval is not None:
         interval_capture(int(args.interval[1]), float(args.interval[0]), args.output, args.color, args.pixhawk_url)
     else:
-        master = mavutil.mavlink_connection(args.pixhawk_url) if args.pixhawk_url else None
+        master = mavutil.mavlink_connection(args.pixhawk_url, baud = 57600) if args.pixhawk_url else None
         gps_data, imu_data = get_pixhawk_data(master) if master else (None, None)
         save_image(args.output, args.color, gps_data, imu_data)
 
